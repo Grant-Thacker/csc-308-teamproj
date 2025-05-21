@@ -1,10 +1,13 @@
 import {render, screen, waitFor} from "@testing-library/react";
-import {MemoryRouter, Route, Routes} from "react-router-dom";
+import {TextEncoder} from 'util';
+
+global.TextEncoder = TextEncoder;
+import {MemoryRouter} from "react-router-dom";
 import AccountPage from "../../../src/routes/account/AccountPage";
 import {expect, describe, it, beforeEach, beforeAll} from "@jest/globals";
 import userEvent from "@testing-library/user-event";
 import type * as backendApi from "../../../src/api/backend";
-import { jest } from "@jest/globals";
+import {jest} from "@jest/globals";
 import {act} from "react";
 
 jest.mock("../../../src/api/backend", () => ({
@@ -36,6 +39,7 @@ describe("AccountPage Component", () => {
             render(<MemoryRouter>{component}</MemoryRouter>);
         });
     }
+
     beforeAll(() => {
         global.URL.createObjectURL = jest.fn(() => "mocked-preview-url");
     })
@@ -97,7 +101,6 @@ describe("AccountPage Component", () => {
         })
 
 
-
     });
 
     it("opens profile picture modal and shows", async () => {
@@ -113,13 +116,15 @@ describe("AccountPage Component", () => {
         expect(uploadBtn).toBeDefined();
         expect(uploadBtn.getAttribute("aria-disabled")).toBe("true");
 
-        // Find the file input
-        const fileInput = screen.getByLabelText("Upload profile picture");
-        expect(fileInput).toBeDefined();
-        expect(screen.getByText("No image selected")).toBeDefined();
-        
-        const file = new File(["hello"], "hello.png", {type: "image/png"});
-        await user.upload(fileInput, file);
+        // Find the url input
+        const urlInput = screen.getByPlaceholderText("Enter image URL");
+        expect(urlInput).toBeDefined();
+
+        const display = screen.getByText("No image URL");
+        expect(display).toBeDefined();
+
+        const url = "https://image"
+        await user.type(urlInput, url);
 
         await waitFor(() => {
             expect(uploadBtn.getAttribute("aria-disabled")).toBe("false");
@@ -130,7 +135,7 @@ describe("AccountPage Component", () => {
         await waitFor(() => {
             expect(editUser).toHaveBeenCalledWith({
                 email: "testuser@example.com",
-                profilePicture: expect.any(String),
+                profilePicture: "https://image",
                 username: "testuser",
             }, "1");
         })

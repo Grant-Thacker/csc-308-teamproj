@@ -1,6 +1,5 @@
-import {useRef, useState, useEffect} from "react";
+import {useState, useEffect} from "react";
 import {Link} from "react-router-dom";
-import {UserCircleIcon} from "../../assets/icons";
 import {getUser, editPassword, editUser} from "../../../src/api/backend";
 import {User} from "types/user";
 
@@ -13,14 +12,14 @@ export default function AccountsPage() {
     const [password, setPassword] = useState("");
 
     const [isPicModalOpen, setIsPicModalOpen] = useState(false);
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-    const [preview, setPreview] = useState<string | null>(null);
     const [profilePicture, setProfilePicture] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const [imageUrl, setImageUrl] = useState("");
+
 
     useEffect(() => {
-        const fetchUser = async  () => {
+        const fetchUser = async () => {
             try {
                 const data = await getUser();
                 setUser(data);
@@ -34,16 +33,9 @@ export default function AccountsPage() {
         };
         fetchUser();
     }, []);
-    if(loading) return <div className="p-6">Loading...</div>;
-    if(error) return <div className="p-6 text-red-500">Error: {error}</div>;
+    if (loading) return <div className="p-6">Loading...</div>;
+    if (error) return <div className="p-6 text-red-500">Error: {error}</div>;
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files[0];
-        if (file) {
-            setSelectedFile(file);
-            setPreview(URL.createObjectURL(file));
-        }
-    };
 
     const handlePasswordChange = (event) => {
         const newPassword = event.target.value;
@@ -71,44 +63,32 @@ export default function AccountsPage() {
         setPassword("");
     };
     const handleUpload = async () => {
-        if (selectedFile && user) {
-            try{
-                const reader = new FileReader();
-                reader.onloadend = async () => {
-                    const base64 = reader.result as string;
-
-                    const updatedUser = {
-                        username: user.username,
-                        email: user.email,
-                        profilePicture: base64,
-                    };
-                    await editUser(updatedUser, user._id);
-
-                    alert("Profile picture updated!"); // replace later with actual logic
-
-                    setProfilePicture(preview);
-                    setIsPicModalOpen(false);
-                    setSelectedFile(null);
-                    setPreview(null);
+        if (imageUrl && user) {
+            try {
+                const updatedUser = {
+                    username: user.username,
+                    email: user.email,
+                    profilePicture: imageUrl,
                 };
-                reader.readAsDataURL(selectedFile);
-            } catch (err) {
-                console.error("Failed to upload profile picture", err);
-                alert("Error changing password");
-            }
+                await editUser(updatedUser, user._id);
 
+                alert("Profile picture updated!");
+                setProfilePicture(imageUrl);
+                setIsPicModalOpen(false);
+                setImageUrl("");
+            } catch (err) {
+                console.error("Failed to update profile picture", err);
+                alert("Error changing profile picture");
+            }
         }
-    };
+
+    }
+
     const handleCancelUpload = () => {
         setIsPicModalOpen(false);
-        setSelectedFile(null);
-        setPreview(null);
+        setImageUrl("");
     };
-    // Trigger file input when clicking preview area
-    const triggerFileInput = () => {
-        fileInputRef.current?.click();
-    };
-    // const el = document.getElementById();
+
     return (
         <div className="flex flex-col items-center gap-6 p-12">
             <h1 className="text-2xl font-bold ">Account Settings</h1>
@@ -154,23 +134,19 @@ export default function AccountsPage() {
                 <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
                     <div className="flex flex-col bg-white items-center justify-center p-6 gap-5 rounded-lg w-96">
                         {/* File input*/}
-                        <input type="file"
-                               accept="image/*"
-                               ref={fileInputRef}
-                               onChange={handleFileChange}
-                               className="w-full h-full object-cover"
-                               aria-label="Upload profile picture"
+                        <input type="text"
+                               placeholder="Enter image URL"
+                               value={imageUrl}
+                               onChange={(e) => setImageUrl(e.target.value)}
+                               className="w-full border p-2 rounded border-primary-100 text-gray-500"
                         />
-                        {/* Clickable Image Preview */}
+                        {/* Live Preview */}
                         <div
-                            className={"rounded-full w-50 h-50 flex overflow-hidden items-center justify-center cursor-pointer  bg-gray-200 hover:bg-gray-300"}
-                            onClick={triggerFileInput}
-                        >
-                            {preview ? (
-                                <img src={preview} alt="Profile Picture"
-                                     className="w-full h-full object-cover "/>
+                            className="rounded-full w-40 h-40 overflow-hidden bg-gray-200 border border-gray-400 flex items-center justify-center">
+                            {imageUrl ? (
+                                <img src={imageUrl} alt="Preview" className="w-full h-full object-cover"/>
                             ) : (
-                                <span className="text-gray-500">No image selected</span>
+                                <span className="text-gray-500">No image URL</span>
                             )}
                         </div>
 
@@ -184,10 +160,10 @@ export default function AccountsPage() {
                             </button>
                             <button
                                 onClick={handleUpload}
-                                disabled={!selectedFile}
-                                aria-disabled={!selectedFile}
+                                disabled={!imageUrl}
+                                aria-disabled={!imageUrl}
                                 className={`px-4 py-2 text-white rounded ${
-                                    selectedFile ? "bg-accent-900 hover:bg-accent-800" : "bg-gray-400 cursor-not-allowed"}`}
+                                    imageUrl ? "bg-accent-900 hover:bg-accent-800" : "bg-gray-400 cursor-not-allowed"}`}
                             >
                                 Upload
                             </button>
@@ -199,7 +175,7 @@ export default function AccountsPage() {
             {isPasswordModalOpen && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
                     <div className="flex flex-col bg-white items-center justify-center p-6 gap-5 rounded-lg w-96">
-                        {/* File input*/}
+                        {/* Password input*/}
                         <input type="text"
                                placeholder="Enter new password"
                                value={password}

@@ -1,4 +1,7 @@
 import {render, screen, waitFor} from "@testing-library/react";
+import {TextEncoder} from 'util';
+
+global.TextEncoder = TextEncoder;
 import {MemoryRouter, Route, Routes} from "react-router-dom";
 import DiaryPage from "../../../src/routes/view-diary/DiaryPage";
 import {expect, describe, it, jest, beforeEach} from "@jest/globals";

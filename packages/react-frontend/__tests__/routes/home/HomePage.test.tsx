@@ -1,10 +1,14 @@
 import {render, screen, waitFor} from "@testing-library/react";
-import {MemoryRouter, Route, Routes} from "react-router-dom";
+import {TextEncoder} from 'util';
+
+global.TextEncoder = TextEncoder;
+import {MemoryRouter} from "react-router-dom";
 import HomePage from "../../../src/routes/home/HomePage";
 import {expect, describe, it, jest, beforeEach} from "@jest/globals";
 import {getUserDiaries} from "../../../src/api/backend";
 
 import type * as backendApi from "../../../src/api/backend";
+
 
 // Mocking the getUserDiaries function (ensure it's correctly mocked)
 jest.mock("../../../src/api/backend", () => ({
